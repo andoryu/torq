@@ -1,0 +1,4 @@
+CompileFlags:
+  Add:
+    - "-I/home/andrew/Development/torq/clipp/include"
+    - "-I/home/andrew/Development/torq/Catch2/src/catch2"
