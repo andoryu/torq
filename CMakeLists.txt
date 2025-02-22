@@ -16,7 +16,7 @@ target_include_directories(torq PRIVATE clipp/include)
 
 
 add_executable(tests
-    tests/lexer.cpp)
+    tests/lexer.cpp src/parser/lexer.cpp)
 
 target_include_directories(tests PRIVATE Catch2/src/catch2)
 
