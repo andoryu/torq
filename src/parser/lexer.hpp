@@ -15,28 +15,36 @@ namespace torq {
         ERROR = 9999
     };
 
+
     class Token {
-        public:
+      public:
         TokenType type;
         int line;
         int column;
-        std::string value;
+        std::string s_value;
+        long i_value;
+        double f_value;
 
         Token(TokenType type, int line, int column, std::string value) :
-            type(type), line(line), column(column), value(value) {}
+            type(type), line(line), column(column), s_value(value) {}
+
+        Token(TokenType type, int line, int column, long value) :
+            type(type), line(line), column(column), i_value(value) {}
+
+        Token(TokenType type, int line, int column, double value) :
+            type(type), line(line), column(column), f_value(value) {}
     };
 
 
-
     class Lexer {
-        private:
+      private:
         std::istream *source;
         std::stringstream string_stream;
 
         int line;
         int column;
 
-        public:
+      public:
         Lexer(std::string string_source) : string_stream(string_source) {
             source = &string_stream;
             line = 1;
@@ -51,7 +59,7 @@ namespace torq {
         Token next();
         Token peek();
 
-        private:
+      private:
         Token read_token();
     };
 
