@@ -8,17 +8,24 @@
 
 TEST_CASE("Lexer extracts single characters", "[lexer]") {
 
-    torq::Lexer l("(");
+    torq::Lexer l("()=.==\n");
     torq::Token t = l.next();
     REQUIRE( t.type == torq::LPAREN );
 
-    torq::Lexer l2(")");
-    t = l2.next();
+    t = l.next();
     REQUIRE( t.type == torq::RPAREN );
 
-    torq::Lexer l3("\n");
-    t = l3.next();
-    REQUIRE( t.type == torq::NL );
+    t = l.next();
+    REQUIRE( t.type == torq::ASSIGN );
+
+    t = l.next();
+    REQUIRE( t.type == torq::DOT );
+
+    t = l.next();
+    REQUIRE( t.type == torq::EQUALS );
+
+    t = l.next();
+    REQUIRE( t.type == torq::ENDL );
 }
 
 TEST_CASE("Lexer return EOF token", "[lexer]") {
@@ -80,7 +87,7 @@ TEST_CASE("simple multi-line file", "[lexer]"){
     REQUIRE( t.type == torq::RPAREN );
 
     t = l.next();
-    REQUIRE( t.type == torq::NL );
+    REQUIRE( t.type == torq::ENDL );
 
     t = l.next();
     REQUIRE( t.type == torq::RPAREN );
@@ -89,7 +96,69 @@ TEST_CASE("simple multi-line file", "[lexer]"){
     REQUIRE( t.type == torq::LPAREN );
 
     t = l.next();
-    REQUIRE( t.type == torq::NL );
+    REQUIRE( t.type == torq::ENDL );
+
+    t = l.next();
+    REQUIRE( t.type == torq::EOS );
+}
+
+TEST_CASE("Lexer skips whitespace", "[lexer]"){
+    torq::Lexer l("( )  \t\t   \n");
+
+    torq::Token t = l.next();
+    REQUIRE( t.type == torq::LPAREN );
+
+    t = l.next();
+    REQUIRE( t.type == torq::RPAREN );
+
+    t = l.next();
+    REQUIRE( t.type == torq::ENDL );
+}
+
+TEST_CASE("Lexer skips whitespace till EoF", "[lexer]"){
+    torq::Lexer l("(           ");
+
+    torq::Token t = l.next();
+    REQUIRE( t.type == torq::LPAREN );
+
+    t = l.next();
+    REQUIRE( t.type == torq::EOS );
+}
+
+TEST_CASE("Lexer skips comments to EoL", "[lexer]"){
+    torq::Lexer l("(# this is a comment\n");
+
+    torq::Token t = l.next();
+    REQUIRE( t.type == torq::LPAREN );
+
+    t = l.next();
+    REQUIRE( t.type == torq::EOS );
+}
+
+TEST_CASE("Lexer skips comments to EoF", "[lexer]"){
+    torq::Lexer l("(# this is a comment, no EoL");
+
+    torq::Token t = l.next();
+    REQUIRE( t.type == torq::LPAREN );
+
+    t = l.next();
+    REQUIRE( t.type == torq::EOS );
+}
+
+TEST_CASE("Lexer skips multiline whitespace and comments combo", "[lexer]"){
+    torq::Lexer l("(     # this is a comment\n    \t\n#another comment\n    )\n");
+
+    torq::Token t = l.next();
+    REQUIRE( t.type == torq::LPAREN );
+
+    t = l.next();
+    REQUIRE( t.type == torq::ENDL );
+
+    t = l.next();
+    REQUIRE( t.type == torq::RPAREN );
+
+    t = l.next();
+    REQUIRE( t.type == torq::ENDL );
 
     t = l.next();
     REQUIRE( t.type == torq::EOS );

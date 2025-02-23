@@ -10,7 +10,14 @@ namespace torq {
     enum TokenType {
         LPAREN,
         RPAREN,
-        NL,
+        DOT,
+        ASSIGN,
+        GT,
+        GTE,
+        LT,
+        LTE,
+        EQUALS,
+        ENDL,
         EOS = 1000,
         ERROR = 9999
     };
@@ -25,6 +32,7 @@ namespace torq {
         long i_value;
         double f_value;
 
+      public:
         Token(TokenType type, int line, int column, std::string value) :
             type(type), line(line), column(column), s_value(value) {}
 
@@ -44,6 +52,9 @@ namespace torq {
         int line;
         int column;
 
+        char advance();
+        char skip_whitespace_comments(char ch);
+
       public:
         Lexer(std::string string_source) : string_stream(string_source) {
             source = &string_stream;
@@ -58,6 +69,7 @@ namespace torq {
 
         Token next();
         Token peek();
+
 
       private:
         Token read_token();
