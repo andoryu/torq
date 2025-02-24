@@ -59,6 +59,58 @@ namespace torq {
         }
     }
 
+    std::string hex_chars = "0123456789abcdefABCEDF_";
+
+    Token Lexer::read_hex_number() {
+        std::string buffer = "";
+        int start_column = column;
+
+        while(true){
+            char ch = source->peek();
+
+            if(hex_chars.find(ch) != std::string::npos) {
+                ch = advance();
+                if(ch != '_') {
+                    buffer += ch;
+                }
+            } else {
+                //try to convert to long
+                try {
+                    long value = std::stol(buffer, nullptr, 16);
+                    return Token(INTEGER, line, start_column, value);
+                } catch (const std::exception& e){
+                    return Token(ERROR, line, start_column, "Unable to convert hex literal to integer");
+                }
+            }
+        }
+    }
+
+    std::string binary_chars = "01_";
+
+    Token Lexer::read_binary_number() {
+        std::string buffer = "";
+        int start_column = column;
+
+        while(true){
+            char ch = source->peek();
+
+            if(hex_chars.find(ch) != std::string::npos) {
+                ch = advance();
+                if(ch != '_') {
+                    buffer += ch;
+                }
+            } else {
+                //try to convert to long
+                try {
+                    long value = std::stol(buffer, nullptr, 2);
+                    return Token(INTEGER, line, start_column, value);
+                } catch (const std::exception& e){
+                    return Token(ERROR, line, start_column, "Unable to convert binary literal to integer");
+                }
+            }
+        }
+    }
+
     Token Lexer::read_token() {
         char ch = advance();
 
@@ -74,6 +126,12 @@ namespace torq {
             case '(': return Token(LPAREN, line, column, "");
             case ')': return Token(RPAREN, line, column, "");
             case '.': return Token(DOT, line, column, "");
+            case ';': return Token(SEMICOLON, line, column, "");
+            case '+': return Token(PLUS, line, column, "");
+            case '-': return Token(MINUS, line, column, "");
+            case '*': return Token(STAR, line, column, "");
+            case '/': return Token(SLASH, line, column, "");
+            case '%': return Token(PERCENT, line, column, "");
             case '\n':
                 line++;
                 return Token(ENDL, line, column, "");
@@ -93,6 +151,23 @@ namespace torq {
                     return Token(GTE, line, column-1, "");
                 } else {
                     return Token(GT, line, column, "");
+                }
+
+            case '<':
+                if (source->peek() == '=') {
+                    advance();
+                    return Token(LTE, line, column-1, "");
+                } else {
+                    return Token(LT, line, column, "");
+                }
+
+            case '0':
+                if(source->peek() == 'x') {
+                    advance();
+                    return read_hex_number();
+                } else if (source->peek() == 'b') {
+                    advance();
+                    return read_binary_number();
                 }
 
             //multi-char tokens

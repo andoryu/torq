@@ -11,12 +11,23 @@ namespace torq {
         LPAREN,
         RPAREN,
         DOT,
+        SEMICOLON,
+
         ASSIGN,
+
         GT,
         GTE,
         LT,
         LTE,
         EQUALS,
+
+        PLUS,
+        MINUS,
+        STAR,
+        SLASH,
+        PERCENT,
+
+        INTEGER,
         ENDL,
         EOS = 1000,
         ERROR = 9999
@@ -28,6 +39,7 @@ namespace torq {
         TokenType type;
         int line;
         int column;
+
         std::string s_value;
         long i_value;
         double f_value;
@@ -54,6 +66,9 @@ namespace torq {
 
         char advance();
         char skip_whitespace_comments(char ch);
+
+        Token read_hex_number();
+        Token read_binary_number();
 
       public:
         Lexer(std::string string_source) : string_stream(string_source) {
