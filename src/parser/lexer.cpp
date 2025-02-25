@@ -94,7 +94,7 @@ namespace torq {
         while(true){
             char ch = source->peek();
 
-            if(hex_chars.find(ch) != std::string::npos) {
+            if(binary_chars.find(ch) != std::string::npos) {
                 ch = advance();
                 if(ch != '_') {
                     buffer += ch;
@@ -111,6 +111,83 @@ namespace torq {
         }
     }
 
+    std::string decimal_chars = "0123456789";
+
+    Token Lexer::read_number() {
+        std::string buffer = "";
+        int start_column = column;
+
+        bool decimal = true;
+
+        while(true) {
+            char ch = source->peek();
+
+            if(decimal_chars.find(ch) != std::string::npos) {
+                ch = advance();
+                if(ch != '_') {
+                    buffer += ch;
+                }
+            } else if( (ch == '.') && decimal ){
+                ch = advance();
+                decimal = false;
+                buffer += ch;
+            } else if( (ch == 'e') || (ch == 'E') ) {
+                int current_pos = source->tellg();
+
+                //look for an exponent sign after the exponent marker
+                source->seekg(1, source->cur);
+                char sch = source->peek();
+                if( (sch == '-') || (sch == '+') ) {
+
+                    //look for a digit after the exponent sign
+                    source->seekg(1, source->cur);
+                    char pch = source->peek();
+                    if(decimal_chars.find(pch) != std::string::npos) {
+                        decimal = false;
+
+                        buffer += ch;
+                        buffer += sch;
+                        buffer += pch;
+                        advance();
+                    }
+                } else if(decimal_chars.find(sch) != std::string::npos) {
+                    decimal = false;
+
+                    buffer += ch;
+                    buffer += sch;
+                    advance();
+                }
+            } else {
+                break;
+            }
+        }
+
+        if(decimal) {
+            try {
+                long value = std::stol(buffer, nullptr, 10);
+                return Token(INTEGER, line, start_column, value);
+            } catch (const std::exception& e) {
+                return Token(ERROR, line, start_column, "Error converting decimal number literal");
+            }
+        } else {
+            try{
+            double value = std::stod(buffer);
+            return Token(FLOAT, line, start_column, value);
+            } catch(const std::exception& e) {
+                return Token(ERROR, line, start_column, "Error converting float number literal");
+            }
+        }
+    }
+
+    Token Lexer::process_pair(char second, TokenType pair, TokenType single) {
+        if (source->peek() == second) {
+            advance();
+            return Token(pair, line, column-1, "");
+        } else {
+            return Token(single, line, column, "");
+        }
+    }
+
     Token Lexer::read_token() {
         char ch = advance();
 
@@ -123,44 +200,26 @@ namespace torq {
         //assign tokens
         switch(ch) {
             //single char tokens
-            case '(': return Token(LPAREN, line, column, "");
-            case ')': return Token(RPAREN, line, column, "");
-            case '.': return Token(DOT, line, column, "");
-            case ';': return Token(SEMICOLON, line, column, "");
-            case '+': return Token(PLUS, line, column, "");
-            case '-': return Token(MINUS, line, column, "");
-            case '*': return Token(STAR, line, column, "");
-            case '/': return Token(SLASH, line, column, "");
-            case '%': return Token(PERCENT, line, column, "");
+            case '(': return Token(LPAREN, line, column);
+            case ')': return Token(RPAREN, line, column);
+            case '.': return Token(DOT, line, column);
+            case ';': return Token(SEMICOLON, line, column);
+            case '+': return Token(PLUS, line, column);
+            case '-': return Token(MINUS, line, column);
+            case '*': return Token(STAR, line, column);
+            case '/': return Token(SLASH, line, column);
+            case '%': return Token(PERCENT, line, column);
             case '\n':
                 line++;
-                return Token(ENDL, line, column, "");
+                return Token(ENDL, line, column);
 
             //single or double char tokens
-            case '=':
-                if (source->peek() == '=') {
-                    advance();
-                    return Token(EQUALS, line, column-1, "");
-                } else {
-                    return Token(ASSIGN, line, column, "");
-                }
+            case '=': return process_pair('=', EQUALS, ASSIGN);
+            case '>': return process_pair('=', GTE, GT);
+            case '<': return process_pair('=', LTE, LT);
+            case '!': return process_pair('=', NOTEQUALS, EXCLAIM);
 
-            case '>':
-                if (source->peek() == '=') {
-                    advance();
-                    return Token(GTE, line, column-1, "");
-                } else {
-                    return Token(GT, line, column, "");
-                }
-
-            case '<':
-                if (source->peek() == '=') {
-                    advance();
-                    return Token(LTE, line, column-1, "");
-                } else {
-                    return Token(LT, line, column, "");
-                }
-
+            //multi-char tokens
             case '0':
                 if(source->peek() == 'x') {
                     advance();
@@ -168,13 +227,19 @@ namespace torq {
                 } else if (source->peek() == 'b') {
                     advance();
                     return read_binary_number();
+                } else {
+                    return read_number();
                 }
 
-            //multi-char tokens
-
             default:
-                auto s = std::string(1, ch);
-                return Token(ERROR, line, column, s);
+                if( (ch >= '0') && (ch <= '9') ) {
+                    //rewind 1 place to allow the read routine to pick up the first digit
+                    source->seekg(-1, source->cur);
+                    return read_number();
+                } else {
+                    auto s = std::string(1, ch);
+                    return Token(ERROR, line, column, s);
+                }
         }
     }
 }

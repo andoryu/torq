@@ -8,7 +8,7 @@
 
 TEST_CASE("Lexer extracts basic characters", "[lexer]") {
 
-    torq::Lexer l("( ) = . == > >= < <= ; + - * / % \n");
+    torq::Lexer l("( ) = . ! == != > >= < <= ; + - * / % \n");
     torq::Token t = l.next();
     REQUIRE( t.type == torq::LPAREN );
 
@@ -22,9 +22,15 @@ TEST_CASE("Lexer extracts basic characters", "[lexer]") {
     REQUIRE( t.type == torq::DOT );
 
     t = l.next();
+    REQUIRE( t.type == torq::EXCLAIM );
+
+    t = l.next();
     REQUIRE( t.type == torq::EQUALS );
 
     t = l.next();
+    REQUIRE( t.type == torq::NOTEQUALS );
+
+        t = l.next();
     REQUIRE( t.type == torq::GT );
 
     t = l.next();
@@ -256,8 +262,75 @@ TEST_CASE("Lexer handles binary literals with trailing token", "[lexer]"){
 }
 
 TEST_CASE("Lexer errors on bad binary literals", "[lexer]"){
-    torq::Lexer l("0b)");
+    torq::Lexer l("0b 0b0123)");
 
     torq::Token t = l.next();
     REQUIRE( t.type == torq::ERROR );
+
+    t = l.next();
+    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.i_value == 1 );
+}
+
+TEST_CASE("Lexer decimal literals", "[lexer]"){
+    torq::Lexer l("0123 343");
+
+    torq::Token t = l.next();
+    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.i_value == 123 );
+
+    t = l.next();
+    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.i_value == 343 );
+}
+
+TEST_CASE("Lexer bad decimal literals", "[lexer]"){
+    torq::Lexer l("0123x");
+
+    torq::Token t = l.next();
+    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.i_value == 123 );
+
+    t = l.next();
+    REQUIRE( t.type == torq::ERROR );
+}
+
+TEST_CASE("Lexer float literals", "[lexer]"){
+    torq::Lexer l("0.55 3.14159 3e08 2.95E-09 4.5E+30");
+
+    torq::Token t = l.next();
+    REQUIRE( t.type == torq::FLOAT );
+    REQUIRE( t.f_value == 0.55 );
+
+    t = l.next();
+    REQUIRE( t.type == torq::FLOAT );
+    REQUIRE( t.f_value == 3.14159 );
+
+    t = l.next();
+    REQUIRE( t.type == torq::FLOAT );
+    REQUIRE( t.f_value == 3e08 );
+
+    t = l.next();
+    REQUIRE( t.type == torq::FLOAT );
+    REQUIRE( t.f_value == 2.95E-09 );
+
+    t = l.next();
+    REQUIRE( t.type == torq::FLOAT );
+    REQUIRE( t.f_value == 4.5e30 );
+}
+
+TEST_CASE("Lexer bad float literals", "[lexer]"){
+    torq::Lexer l("3.14.159 45e");
+
+    torq::Token t = l.next();
+    REQUIRE( t.type == torq::FLOAT );
+    REQUIRE( t.f_value == 3.14 );
+
+    t = l.next();
+    REQUIRE( t.type == torq::DOT );
+
+    t = l.next();
+
+    t = l.next();
+    REQUIRE( t.type == torq::INTEGER );
 }
