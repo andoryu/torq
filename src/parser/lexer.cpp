@@ -284,6 +284,9 @@ namespace torq {
             //single char tokens
             case '(': return Token(LPAREN, line, column);
             case ')': return Token(RPAREN, line, column);
+            case '[': return Token(LBRACKET, line, column);
+            case ']': return Token(RBRACKET, line, column);
+            case ',':  return Token(COMMA, line, column);
             case '.': return Token(DOT, line, column);
             case ';': return Token(SEMICOLON, line, column);
             case '+': return Token(PLUS, line, column);

@@ -10,7 +10,10 @@ namespace torq {
     enum TokenType {
         LPAREN,
         RPAREN,
+        LBRACKET,
+        RBRACKET,
         DOT,
+        COMMA,
         SEMICOLON,
         EXCLAIM,
 

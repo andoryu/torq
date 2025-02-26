@@ -8,12 +8,21 @@
 
 TEST_CASE("extract basic characters", "[lexer]") {
 
-    torq::Lexer l("( ) = . ! == != > >= < <= ; + - * / % \n");
+    torq::Lexer l("( ) [ ] , = . ! == != > >= < <= ; + - * / % \n");
     torq::Token t = l.next();
     REQUIRE( t.type == torq::LPAREN );
 
     t = l.next();
     REQUIRE( t.type == torq::RPAREN );
+
+    t = l.next();
+    REQUIRE( t.type == torq::LBRACKET );
+
+    t = l.next();
+    REQUIRE( t.type == torq::RBRACKET );
+
+    t = l.next();
+    REQUIRE( t.type == torq::COMMA );
 
     t = l.next();
     REQUIRE( t.type == torq::ASSIGN );
@@ -30,7 +39,7 @@ TEST_CASE("extract basic characters", "[lexer]") {
     t = l.next();
     REQUIRE( t.type == torq::NOTEQUALS );
 
-        t = l.next();
+    t = l.next();
     REQUIRE( t.type == torq::GT );
 
     t = l.next();
@@ -162,9 +171,12 @@ TEST_CASE("skips whitespace till EoF", "[lexer]"){
 }
 
 TEST_CASE("skips comments to EoL", "[lexer]"){
-    torq::Lexer l("(# this is a comment\n");
+    torq::Lexer l("(# this is a comment\n(");
 
     torq::Token t = l.next();
+    REQUIRE( t.type == torq::LPAREN );
+
+    t = l.next();
     REQUIRE( t.type == torq::LPAREN );
 
     t = l.next();
