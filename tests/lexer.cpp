@@ -6,7 +6,7 @@
 
 #include "../src/parser/lexer.hpp"
 
-TEST_CASE("Lexer extracts basic characters", "[lexer]") {
+TEST_CASE("extract basic characters", "[lexer]") {
 
     torq::Lexer l("( ) = . ! == != > >= < <= ; + - * / % \n");
     torq::Token t = l.next();
@@ -64,7 +64,7 @@ TEST_CASE("Lexer extracts basic characters", "[lexer]") {
     REQUIRE( t.type == torq::ENDL );
 }
 
-TEST_CASE("Lexer return EOF token", "[lexer]") {
+TEST_CASE("return EOF token", "[lexer]") {
     torq::Lexer l("(");
 
     torq::Token t = l.next();
@@ -74,7 +74,7 @@ TEST_CASE("Lexer return EOF token", "[lexer]") {
     REQUIRE( t.type == torq::EOS );
 }
 
-TEST_CASE("Lexer handles unwanted characters", "[lexer]") {
+TEST_CASE("handles unwanted characters", "[lexer]") {
     char ch = 0xAE; //® - registered sign
     std::string source = std::string(1, ch);
     torq::Lexer l(source);
@@ -83,7 +83,7 @@ TEST_CASE("Lexer handles unwanted characters", "[lexer]") {
     REQUIRE( t.type == torq::ERROR );
 }
 
-TEST_CASE("Lexer peeks correctly", "[lexer]") {
+TEST_CASE("peeks correctly", "[lexer]") {
     torq::Lexer l("()");
 
     torq::Token t = l.peek();
@@ -138,7 +138,7 @@ TEST_CASE("simple multi-line file", "[lexer]"){
     REQUIRE( t.type == torq::EOS );
 }
 
-TEST_CASE("Lexer skips whitespace", "[lexer]"){
+TEST_CASE("skips whitespace", "[lexer]"){
     torq::Lexer l("( )  \t\t   \n");
 
     torq::Token t = l.next();
@@ -151,7 +151,7 @@ TEST_CASE("Lexer skips whitespace", "[lexer]"){
     REQUIRE( t.type == torq::ENDL );
 }
 
-TEST_CASE("Lexer skips whitespace till EoF", "[lexer]"){
+TEST_CASE("skips whitespace till EoF", "[lexer]"){
     torq::Lexer l("(           ");
 
     torq::Token t = l.next();
@@ -161,7 +161,7 @@ TEST_CASE("Lexer skips whitespace till EoF", "[lexer]"){
     REQUIRE( t.type == torq::EOS );
 }
 
-TEST_CASE("Lexer skips comments to EoL", "[lexer]"){
+TEST_CASE("skips comments to EoL", "[lexer]"){
     torq::Lexer l("(# this is a comment\n");
 
     torq::Token t = l.next();
@@ -171,7 +171,7 @@ TEST_CASE("Lexer skips comments to EoL", "[lexer]"){
     REQUIRE( t.type == torq::EOS );
 }
 
-TEST_CASE("Lexer skips comments to EoF", "[lexer]"){
+TEST_CASE("skips comments to EoF", "[lexer]"){
     torq::Lexer l("(# this is a comment, no EoL");
 
     torq::Token t = l.next();
@@ -181,7 +181,7 @@ TEST_CASE("Lexer skips comments to EoF", "[lexer]"){
     REQUIRE( t.type == torq::EOS );
 }
 
-TEST_CASE("Lexer skips multiline whitespace and comments combo", "[lexer]"){
+TEST_CASE("skips multiline whitespace and comments combo", "[lexer]"){
     torq::Lexer l("(     # this is a comment\n    \t\n#another comment\n    )\n");
 
     torq::Token t = l.next();
@@ -200,7 +200,7 @@ TEST_CASE("Lexer skips multiline whitespace and comments combo", "[lexer]"){
     REQUIRE( t.type == torq::EOS );
 }
 
-TEST_CASE("Lexer handles hex literals", "[lexer]"){
+TEST_CASE("handles hex literals", "[lexer]"){
     torq::Lexer l("0xdeadbeef");
 
     torq::Token t = l.next();
@@ -208,7 +208,7 @@ TEST_CASE("Lexer handles hex literals", "[lexer]"){
     REQUIRE( t.i_value == 0xdeadbeef );
 }
 
-TEST_CASE("Lexer handles hex literals with underscores", "[lexer]"){
+TEST_CASE("handles hex literals with underscores", "[lexer]"){
     torq::Lexer l("0xdead_beef");
 
     torq::Token t = l.next();
@@ -216,7 +216,7 @@ TEST_CASE("Lexer handles hex literals with underscores", "[lexer]"){
     REQUIRE( t.i_value == 0xdeadbeef );
 }
 
-TEST_CASE("Lexer handles hex literals with trailing token", "[lexer]"){
+TEST_CASE("handles hex literals with trailing token", "[lexer]"){
     torq::Lexer l("0xdeadbeef)");
 
     torq::Token t = l.next();
@@ -227,14 +227,14 @@ TEST_CASE("Lexer handles hex literals with trailing token", "[lexer]"){
     REQUIRE( t.type == torq::RPAREN );
 }
 
-TEST_CASE("Lexer errors on bad hex literals", "[lexer]"){
+TEST_CASE("errors on bad hex literals", "[lexer]"){
     torq::Lexer l("0x)");
 
     torq::Token t = l.next();
     REQUIRE( t.type == torq::ERROR );
 }
 
-TEST_CASE("Lexer handles binary literals", "[lexer]"){
+TEST_CASE("handles binary literals", "[lexer]"){
     torq::Lexer l("0b0111");
 
     torq::Token t = l.next();
@@ -242,7 +242,7 @@ TEST_CASE("Lexer handles binary literals", "[lexer]"){
     REQUIRE( t.i_value == 7 );
 }
 
-TEST_CASE("Lexer handles binary literals with underscores", "[lexer]"){
+TEST_CASE("handles binary literals with underscores", "[lexer]"){
     torq::Lexer l("0b0000_0011");
 
     torq::Token t = l.next();
@@ -250,7 +250,7 @@ TEST_CASE("Lexer handles binary literals with underscores", "[lexer]"){
     REQUIRE( t.i_value == 3 );
 }
 
-TEST_CASE("Lexer handles binary literals with trailing token", "[lexer]"){
+TEST_CASE("handles binary literals with trailing token", "[lexer]"){
     torq::Lexer l("0b0000_0111)");
 
     torq::Token t = l.next();
@@ -261,7 +261,7 @@ TEST_CASE("Lexer handles binary literals with trailing token", "[lexer]"){
     REQUIRE( t.type == torq::RPAREN );
 }
 
-TEST_CASE("Lexer errors on bad binary literals", "[lexer]"){
+TEST_CASE("errors on bad binary literals", "[lexer]"){
     torq::Lexer l("0b 0b0123)");
 
     torq::Token t = l.next();
@@ -272,7 +272,7 @@ TEST_CASE("Lexer errors on bad binary literals", "[lexer]"){
     REQUIRE( t.i_value == 1 );
 }
 
-TEST_CASE("Lexer decimal literals", "[lexer]"){
+TEST_CASE("decimal literals", "[lexer]"){
     torq::Lexer l("0123 343");
 
     torq::Token t = l.next();
@@ -284,7 +284,7 @@ TEST_CASE("Lexer decimal literals", "[lexer]"){
     REQUIRE( t.i_value == 343 );
 }
 
-TEST_CASE("Lexer bad decimal literals", "[lexer]"){
+TEST_CASE("bad decimal literals", "[lexer]"){
     torq::Lexer l("0123x");
 
     torq::Token t = l.next();
@@ -295,7 +295,7 @@ TEST_CASE("Lexer bad decimal literals", "[lexer]"){
     REQUIRE( t.type == torq::ERROR );
 }
 
-TEST_CASE("Lexer float literals", "[lexer]"){
+TEST_CASE("float literals", "[lexer]"){
     torq::Lexer l("0.55 3.14159 3e08 2.95E-09 4.5E+30");
 
     torq::Token t = l.next();
@@ -319,8 +319,8 @@ TEST_CASE("Lexer float literals", "[lexer]"){
     REQUIRE( t.f_value == 4.5e30 );
 }
 
-TEST_CASE("Lexer bad float literals", "[lexer]"){
-    torq::Lexer l("3.14.159 45e");
+TEST_CASE("bad float literals", "[lexer]"){
+    torq::Lexer l("3.14.159 45e 123e-");
 
     torq::Token t = l.next();
     REQUIRE( t.type == torq::FLOAT );
@@ -332,5 +332,41 @@ TEST_CASE("Lexer bad float literals", "[lexer]"){
     t = l.next();
 
     t = l.next();
-    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.type == torq::ERROR );
+
+    t = l.next();
+    REQUIRE( t.type == torq::ERROR );
+}
+
+TEST_CASE("single line strings", "[lexer]"){
+    torq::Lexer l(R"( "this is a test" "newline\n\\\ttest" )");
+
+    torq::Token t = l.next();
+    INFO(t.s_value);
+    REQUIRE( t.type == torq::STRING );
+    REQUIRE( t.s_value == "this is a test" );
+
+    t = l.next();
+    INFO(t.s_value);
+    REQUIRE( t.type == torq::STRING );
+    REQUIRE( t.s_value == "newline\n\\\ttest" );
+}
+
+TEST_CASE("multi-line string", "[lexer]"){
+    torq::Lexer l(" \"\"\"this is a test\nwith multiple lines\nof text\"\"\" ");
+
+    torq::Token t = l.next();
+    INFO(t.s_value);
+    REQUIRE( t.type == torq::STRING );
+    REQUIRE( t.s_value == "this is a test\nwith multiple lines\nof text" );
+}
+
+TEST_CASE("bad single line strings", "[lexer]"){
+    torq::Lexer l(" \"this is a test\n \"unterminated string at eof");
+
+    torq::Token t = l.next();
+    REQUIRE( t.type == torq::ERROR );
+
+    t = l.next();
+    REQUIRE( t.type == torq::ERROR );
 }

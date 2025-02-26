@@ -31,6 +31,8 @@ namespace torq {
 
         INTEGER,
         FLOAT,
+        STRING,
+        BOOL,
 
         ENDL,
         EOS = 1000,
@@ -85,6 +87,8 @@ namespace torq {
         int column;
 
         char advance();
+        char peek_char(int offset = 1);
+
         char skip_whitespace_comments(char ch);
 
         Token process_pair(char second, TokenType pair, TokenType single);
@@ -92,6 +96,7 @@ namespace torq {
         Token read_hex_number();
         Token read_binary_number();
         Token read_number();
+        Token read_string();
 
       public:
         Lexer(std::string string_source) : string_stream(string_source) {

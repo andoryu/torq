@@ -29,6 +29,18 @@ namespace torq {
         return ch;
     }
 
+    char Lexer::peek_char(int offset) {
+        int curr = source->tellg();
+
+        source->seekg(offset-1, source->cur);
+        char ch = source->peek();
+
+        //reset to original pos
+        source->seekg(curr, source->beg);
+
+        return ch;
+    }
+
     char Lexer::skip_whitespace_comments(char ch) {
         char tmp = ch;
 
@@ -149,6 +161,8 @@ namespace torq {
                         buffer += sch;
                         buffer += pch;
                         advance();
+                    } else {
+                        return Token(ERROR, line, start_column, "incomplete float literal");
                     }
                 } else if(decimal_chars.find(sch) != std::string::npos) {
                     decimal = false;
@@ -156,6 +170,8 @@ namespace torq {
                     buffer += ch;
                     buffer += sch;
                     advance();
+                } else {
+                    return Token(ERROR, line, start_column, "incomplete float literal");
                 }
             } else {
                 break;
@@ -175,6 +191,72 @@ namespace torq {
             return Token(FLOAT, line, start_column, value);
             } catch(const std::exception& e) {
                 return Token(ERROR, line, start_column, "Error converting float number literal");
+            }
+        }
+    }
+
+    Token Lexer::read_string() {
+        std::string buffer = "";
+        bool single_line = true;
+        int start_column = column-1;
+        int start_line = line;
+
+        //check for single or multi-line strings and for empty strings
+        if( (peek_char(1) == '"') && (peek_char(2) != '"') ) {
+            //empty string
+            advance();
+            return Token(STRING, line, start_column, "");
+        } else if ( (peek_char(1) == '"') && (peek_char(2) == '"') ) {
+            //multi-line string
+            single_line = false;
+            advance();
+            advance();
+        } else {
+            single_line = true;
+        }
+
+        while(true) {
+            char ch = advance();
+
+            if(ch == '\\') {
+                ch = advance();
+
+                switch(ch) {
+                    case '\\': buffer += '\\'; break;
+                    case '"': buffer += '"'; break;
+                    case 'n': buffer += '\n'; break;
+                    case 'r': buffer += '\r'; break;
+                    case 't': buffer += '\t'; break;
+
+                    default:
+                        buffer = "Invalid escape character: ";
+                        buffer += ch;
+                        return Token(ERROR, line, column, buffer);
+                }
+            } else if(ch == '\n') {
+                if(single_line) {
+                    advance();
+                    line++;
+                    return Token(ERROR, line, column, "Unterminated string literal");
+                } else {
+                    //multiline, just add
+                    buffer += ch;
+                }
+            } else if(ch == '"') {
+                if(single_line) {
+                    return Token(STRING, line, start_column, buffer);
+                } else {
+                    //multiline string - read and remove two more " or error
+                    if( (peek_char(1) == '"') && (peek_char(2) == '"') ) {
+                        return Token(STRING, start_line, start_column, buffer);
+                    } else {
+                        return Token(ERROR, start_line, start_column, "unclosed multi-line string");
+                    }
+                }
+            } else if(source->eof()) {
+                return Token(ERROR, line, column, "Unterminated string literal");
+            } else {
+                buffer += ch;
             }
         }
     }
@@ -220,6 +302,10 @@ namespace torq {
             case '!': return process_pair('=', NOTEQUALS, EXCLAIM);
 
             //multi-char tokens
+
+            // hex and binary formatted numbers
+            // floats and decimals starting with 0
+            // rest below
             case '0':
                 if(source->peek() == 'x') {
                     advance();
@@ -230,6 +316,8 @@ namespace torq {
                 } else {
                     return read_number();
                 }
+
+            case '"': return read_string();
 
             default:
                 if( (ch >= '0') && (ch <= '9') ) {
