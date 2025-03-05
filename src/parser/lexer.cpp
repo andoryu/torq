@@ -123,7 +123,7 @@ namespace torq {
         }
     }
 
-    std::string decimal_chars = "0123456789";
+    std::string decimal_chars = "0123456789_";
 
     Token Lexer::read_number() {
         std::string buffer = "";
@@ -132,28 +132,29 @@ namespace torq {
         bool decimal = true;
 
         while(true) {
-            char ch = source->peek();
+            char ch = peek_char(1);
 
             if(decimal_chars.find(ch) != std::string::npos) {
                 ch = advance();
                 if(ch != '_') {
                     buffer += ch;
                 }
+
             } else if( (ch == '.') && decimal ){
                 ch = advance();
                 decimal = false;
                 buffer += ch;
+
             } else if( (ch == 'e') || (ch == 'E') ) {
-                int current_pos = source->tellg();
+                advance();
 
                 //look for an exponent sign after the exponent marker
-                source->seekg(1, source->cur);
-                char sch = source->peek();
-                if( (sch == '-') || (sch == '+') ) {
+                char sch = peek_char(1);
 
+                if( (sch == '-') || (sch == '+') ) {
                     //look for a digit after the exponent sign
-                    source->seekg(1, source->cur);
-                    char pch = source->peek();
+                    char pch = peek_char(2);
+
                     if(decimal_chars.find(pch) != std::string::npos) {
                         decimal = false;
 
@@ -161,15 +162,18 @@ namespace torq {
                         buffer += sch;
                         buffer += pch;
                         advance();
+                        advance();
                     } else {
                         return Token(ERROR, line, start_column, "incomplete float literal");
                     }
+
                 } else if(decimal_chars.find(sch) != std::string::npos) {
                     decimal = false;
 
                     buffer += ch;
                     buffer += sch;
                     advance();
+
                 } else {
                     return Token(ERROR, line, start_column, "incomplete float literal");
                 }

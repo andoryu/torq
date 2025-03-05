@@ -1,10 +1,14 @@
-#define CONFIG_CATCH_MAIN
-
+#include <catch2/catch_session.hpp>
 #include <catch2/catch_test_macros.hpp>
 
 #include <fstream>
 
 #include "../src/parser/lexer.hpp"
+
+int main( int argc, char* argv[] ) {
+  int result = Catch::Session().run( argc, argv );
+  return result;
+}
 
 TEST_CASE("extract basic characters", "[lexer]") {
 
@@ -332,7 +336,7 @@ TEST_CASE("float literals", "[lexer]"){
 }
 
 TEST_CASE("bad float literals", "[lexer]"){
-    torq::Lexer l("3.14.159 45e 123e-");
+    torq::Lexer l("3.14.159 45e 123e- 123ef");
 
     torq::Token t = l.next();
     REQUIRE( t.type == torq::FLOAT );
@@ -346,6 +350,15 @@ TEST_CASE("bad float literals", "[lexer]"){
     t = l.next();
     REQUIRE( t.type == torq::ERROR );
 
+    //123e-
+    t = l.next();
+    REQUIRE( t.type == torq::ERROR );
+
+    //the '-' will be left
+    t = l.next();
+    REQUIRE( t.type == torq::MINUS );
+
+    //123ef
     t = l.next();
     REQUIRE( t.type == torq::ERROR );
 }
