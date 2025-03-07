@@ -101,6 +101,10 @@ namespace torq {
         Token read_number();
         Token read_string();
 
+        bool is_hex_char(char ch);
+        bool is_binary_char(char ch);
+        bool is_decimal_char(char ch);
+
       public:
         Lexer(std::string string_source) : string_stream(string_source) {
             source = &string_stream;

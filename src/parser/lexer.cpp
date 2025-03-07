@@ -8,7 +8,6 @@ namespace torq {
         return read_token();
     }
 
-
     Token Lexer::peek() {
         //save current positions and reset after
         auto current_stream_pos = source->tellg();
@@ -30,15 +29,24 @@ namespace torq {
     }
 
     char Lexer::peek_char(int offset) {
-        int curr = source->tellg();
 
-        source->seekg(offset-1, source->cur);
-        char ch = source->peek();
+        if( offset == 1) {
+            return source->peek();
+        } else {
+            //store current position
+            int curr = source->tellg();
 
-        //reset to original pos
-        source->seekg(curr, source->beg);
+            // this looks weird, but is ok.
+            // istream->peek looks at the character after the current position (curr + 1).
+            // So peek_char(1) - peek 1 char ahead - needs an offset of 0
+            source->seekg(offset-1, source->cur);
+            char ch = source->peek();
 
-        return ch;
+            //reset to original pos
+            source->seekg(curr, source->beg);
+
+            return ch;
+        }
     }
 
     char Lexer::skip_whitespace_comments(char ch) {
@@ -56,12 +64,23 @@ namespace torq {
                 //comments till end of line
                 case '#':
                     //run to end of line, or end of file
-                    while( (source->peek() != '\n') && (!source->eof()) ) {
-                        advance();
+                    //while( (peek_char(1) != '\n') && (!source->eof()) ) {
+                    while(true) {
+                        ch = peek_char();
+
+                        if(ch == '\n') {
+                            //skip over \n
+                            advance();
+                            break;
+                        } else if (ch == std::istream::traits_type::eof() ) {
+                            //end of file - jump out
+                            break;
+                        } else {
+                            //next char
+                            advance();
+                        }
                     }
-                    //skip the \n
-                    advance();
-                    //set tmp to the value after the new line
+                    //set tmp to the next char - might be and eof
                     tmp = advance();
                     break;
 
@@ -71,17 +90,26 @@ namespace torq {
         }
     }
 
-    std::string hex_chars = "0123456789abcdefABCEDF_";
+    bool Lexer::is_hex_char(char ch) {
+        if ( (ch >= '0') && (ch <= '9') )
+            return true;
+        else if ( (ch >= 'a') && (ch <= 'f') )
+            return true;
+        else if ( (ch >= 'A') && (ch <= 'F') )
+            return true;
+        else if (ch =='_')
+            return true;
+
+        return false;
+    }
 
     Token Lexer::read_hex_number() {
         std::string buffer = "";
         int start_column = column;
 
         while(true){
-            char ch = source->peek();
-
-            if(hex_chars.find(ch) != std::string::npos) {
-                ch = advance();
+            if( is_hex_char(peek_char()) ) {
+                char ch = advance();
                 if(ch != '_') {
                     buffer += ch;
                 }
@@ -97,17 +125,22 @@ namespace torq {
         }
     }
 
-    std::string binary_chars = "01_";
+    bool Lexer::is_binary_char(char ch) {
+        if ( (ch >= '0') && (ch <= '1') )
+            return true;
+        else if (ch =='_')
+            return true;
+
+        return false;
+    }
 
     Token Lexer::read_binary_number() {
         std::string buffer = "";
         int start_column = column;
 
         while(true){
-            char ch = source->peek();
-
-            if(binary_chars.find(ch) != std::string::npos) {
-                ch = advance();
+            if( is_binary_char(peek_char()) ) {
+                char ch = advance();
                 if(ch != '_') {
                     buffer += ch;
                 }
@@ -123,8 +156,14 @@ namespace torq {
         }
     }
 
-    std::string decimal_chars = "0123456789_";
+    bool Lexer::is_decimal_char(char ch) {
+        if ( (ch >= '0') && (ch <= '9') )
+            return true;
+        else if (ch =='_')
+            return true;
 
+        return false;
+    }
     Token Lexer::read_number() {
         std::string buffer = "";
         int start_column = column;
@@ -134,7 +173,7 @@ namespace torq {
         while(true) {
             char ch = peek_char(1);
 
-            if(decimal_chars.find(ch) != std::string::npos) {
+            if( is_decimal_char(ch) ) {
                 ch = advance();
                 if(ch != '_') {
                     buffer += ch;
@@ -155,7 +194,7 @@ namespace torq {
                     //look for a digit after the exponent sign
                     char pch = peek_char(2);
 
-                    if(decimal_chars.find(pch) != std::string::npos) {
+                    if(is_decimal_char(pch)) {
                         decimal = false;
 
                         buffer += ch;
@@ -167,7 +206,7 @@ namespace torq {
                         return Token(ERROR, line, start_column, "incomplete float literal");
                     }
 
-                } else if(decimal_chars.find(sch) != std::string::npos) {
+                } else if(is_decimal_char(sch)) {
                     decimal = false;
 
                     buffer += ch;
@@ -266,7 +305,7 @@ namespace torq {
     }
 
     Token Lexer::process_pair(char second, TokenType pair, TokenType single) {
-        if (source->peek() == second) {
+        if (peek_char() == second) {
             advance();
             return Token(pair, line, column-1, "");
         } else {
@@ -280,7 +319,7 @@ namespace torq {
         //skip whitespace and comments - in any order - before collecting next token
         ch = skip_whitespace_comments(ch);
 
-        if (source->eof())
+        if (ch == std::istream::traits_type::eof() )
             return Token(EOS, line, column, "");
 
         //assign tokens
@@ -314,16 +353,17 @@ namespace torq {
             // floats and decimals starting with 0
             // rest below
             case '0':
-                if(source->peek() == 'x') {
+                if(peek_char() == 'x') {
                     advance();
                     return read_hex_number();
-                } else if (source->peek() == 'b') {
+                } else if (peek_char() == 'b') {
                     advance();
                     return read_binary_number();
                 } else {
                     return read_number();
                 }
 
+            //single and multi-line strings
             case '"': return read_string();
 
             default:
@@ -332,8 +372,9 @@ namespace torq {
                     source->seekg(-1, source->cur);
                     return read_number();
                 } else {
-                    auto s = std::string(1, ch);
-                    return Token(ERROR, line, column, s);
+                    std::string error = "unrecognised token: ";
+                    error += ch;
+                    return Token(ERROR, line, column, error);
                 }
         }
     }
