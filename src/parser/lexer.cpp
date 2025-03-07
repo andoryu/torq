@@ -12,12 +12,16 @@ namespace torq {
         //save current positions and reset after
         auto current_stream_pos = source->tellg();
         int current_column = column;
+        int current_line = line;
 
         Token t = read_token();
 
         source->clear(); //need to clear flags, in case we hit EOF while getting the next token
+
+        //restore old position
         source->seekg(current_stream_pos);
         column = current_column;
+        line = current_line;
 
         return t;
     }
