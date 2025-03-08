@@ -68,20 +68,14 @@ namespace torq {
                 //comments till end of line
                 case '#':
                     //run to end of line, or end of file
-                    //while( (peek_char(1) != '\n') && (!source->eof()) ) {
                     while(true) {
-                        ch = peek_char();
+                        ch = advance();
 
                         if(ch == '\n') {
-                            //skip over \n
-                            advance();
                             break;
                         } else if (ch == std::istream::traits_type::eof() ) {
                             //end of file - jump out
                             break;
-                        } else {
-                            //next char
-                            advance();
                         }
                     }
                     //set tmp to the next char - might be and eof
