@@ -1,4 +1,5 @@
 CompileFlags:
   Add:
+    - "-std=c++23"
     - "-I/home/andrew/Development/torq/clipp/include"
     - "-I/home/andrew/Development/torq/Catch2/src/catch2"

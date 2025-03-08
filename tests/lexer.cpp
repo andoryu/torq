@@ -1,6 +1,7 @@
 #include <catch2/catch_session.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include <format>
 #include <fstream>
 
 #include "../src/parser/lexer.hpp"
@@ -220,7 +221,7 @@ TEST_CASE("handles hex literals", "[lexer]"){
     torq::Lexer l("0xdeadbeef");
 
     torq::Token t = l.next();
-    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.type == torq::INTEGER_LIT );
     REQUIRE( t.i_value == 0xdeadbeef );
 }
 
@@ -228,7 +229,7 @@ TEST_CASE("handles hex literals with underscores", "[lexer]"){
     torq::Lexer l("0xdead_beef");
 
     torq::Token t = l.next();
-    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.type == torq::INTEGER_LIT );
     REQUIRE( t.i_value == 0xdeadbeef );
 }
 
@@ -236,7 +237,7 @@ TEST_CASE("handles hex literals with trailing token", "[lexer]"){
     torq::Lexer l("0xdeadbeef)");
 
     torq::Token t = l.next();
-    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.type == torq::INTEGER_LIT );
     REQUIRE( t.i_value == 0xdeadbeef );
 
     t = l.next();
@@ -254,7 +255,7 @@ TEST_CASE("handles binary literals", "[lexer]"){
     torq::Lexer l("0b0111");
 
     torq::Token t = l.next();
-    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.type == torq::INTEGER_LIT );
     REQUIRE( t.i_value == 7 );
 }
 
@@ -262,7 +263,7 @@ TEST_CASE("handles binary literals with underscores", "[lexer]"){
     torq::Lexer l("0b0000_0011");
 
     torq::Token t = l.next();
-    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.type == torq::INTEGER_LIT );
     REQUIRE( t.i_value == 3 );
 }
 
@@ -270,7 +271,7 @@ TEST_CASE("handles binary literals with trailing token", "[lexer]"){
     torq::Lexer l("0b0000_0111)");
 
     torq::Token t = l.next();
-    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.type == torq::INTEGER_LIT );
     REQUIRE( t.i_value == 7 );
 
     t = l.next();
@@ -284,7 +285,7 @@ TEST_CASE("errors on bad binary literals", "[lexer]"){
     REQUIRE( t.type == torq::ERROR );
 
     t = l.next();
-    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.type == torq::INTEGER_LIT );
     REQUIRE( t.i_value == 1 );
 }
 
@@ -292,11 +293,11 @@ TEST_CASE("decimal literals", "[lexer]"){
     torq::Lexer l("0123 343");
 
     torq::Token t = l.next();
-    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.type == torq::INTEGER_LIT );
     REQUIRE( t.i_value == 123 );
 
     t = l.next();
-    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.type == torq::INTEGER_LIT );
     REQUIRE( t.i_value == 343 );
 }
 
@@ -304,34 +305,34 @@ TEST_CASE("bad decimal literals", "[lexer]"){
     torq::Lexer l("0123x");
 
     torq::Token t = l.next();
-    REQUIRE( t.type == torq::INTEGER );
+    REQUIRE( t.type == torq::INTEGER_LIT );
     REQUIRE( t.i_value == 123 );
 
     t = l.next();
-    REQUIRE( t.type == torq::ERROR );
+    REQUIRE( t.type == torq::IDENTIFIER );
 }
 
 TEST_CASE("float literals", "[lexer]"){
     torq::Lexer l("0.55 3.14159 3e08 2.95E-09 4.5E+30");
 
     torq::Token t = l.next();
-    REQUIRE( t.type == torq::FLOAT );
+    REQUIRE( t.type == torq::FLOAT_LIT );
     REQUIRE( t.f_value == 0.55 );
 
     t = l.next();
-    REQUIRE( t.type == torq::FLOAT );
+    REQUIRE( t.type == torq::FLOAT_LIT );
     REQUIRE( t.f_value == 3.14159 );
 
     t = l.next();
-    REQUIRE( t.type == torq::FLOAT );
+    REQUIRE( t.type == torq::FLOAT_LIT );
     REQUIRE( t.f_value == 3e08 );
 
     t = l.next();
-    REQUIRE( t.type == torq::FLOAT );
+    REQUIRE( t.type == torq::FLOAT_LIT );
     REQUIRE( t.f_value == 2.95E-09 );
 
     t = l.next();
-    REQUIRE( t.type == torq::FLOAT );
+    REQUIRE( t.type == torq::FLOAT_LIT );
     REQUIRE( t.f_value == 4.5e30 );
 }
 
@@ -339,7 +340,7 @@ TEST_CASE("bad float literals", "[lexer]"){
     torq::Lexer l("3.14.159 45e 123e- 123ef");
 
     torq::Token t = l.next();
-    REQUIRE( t.type == torq::FLOAT );
+    REQUIRE( t.type == torq::FLOAT_LIT );
     REQUIRE( t.f_value == 3.14 );
 
     t = l.next();
@@ -368,12 +369,12 @@ TEST_CASE("single line strings", "[lexer]"){
 
     torq::Token t = l.next();
     INFO(t.s_value);
-    REQUIRE( t.type == torq::STRING );
+    REQUIRE( t.type == torq::STRING_LIT );
     REQUIRE( t.s_value == "this is a test" );
 
     t = l.next();
     INFO(t.s_value);
-    REQUIRE( t.type == torq::STRING );
+    REQUIRE( t.type == torq::STRING_LIT );
     REQUIRE( t.s_value == "newline\n\\\ttest" );
 }
 
@@ -382,7 +383,7 @@ TEST_CASE("multi-line string", "[lexer]"){
 
     torq::Token t = l.next();
     INFO(t.s_value);
-    REQUIRE( t.type == torq::STRING );
+    REQUIRE( t.type == torq::STRING_LIT );
     REQUIRE( t.s_value == "this is a test\nwith multiple lines\nof text" );
 }
 
@@ -394,4 +395,92 @@ TEST_CASE("bad single line strings", "[lexer]"){
 
     t = l.next();
     REQUIRE( t.type == torq::ERROR );
+}
+
+TEST_CASE("keywords", "[lexer]"){
+    torq::Lexer l("if then else end while for do break return import true false int float string fn");
+
+    torq::Token t = l.next();
+    REQUIRE( t.type == torq::IF );
+
+    t = l.next();
+    REQUIRE( t.type == torq::THEN );
+
+    t = l.next();
+    REQUIRE( t.type == torq::ELSE );
+
+    t = l.next();
+    REQUIRE( t.type == torq::END );
+
+    t = l.next();
+    REQUIRE( t.type == torq::WHILE );
+
+    t = l.next();
+    REQUIRE( t.type == torq::FOR );
+
+    t = l.next();
+    REQUIRE( t.type == torq::DO );
+
+    t = l.next();
+    REQUIRE( t.type == torq::BREAK );
+
+    t = l.next();
+    REQUIRE( t.type == torq::RETURN );
+
+    t = l.next();
+    REQUIRE( t.type == torq::IMPORT );
+
+    t = l.next();
+    REQUIRE( t.type == torq::TRUE_LIT );
+
+    t = l.next();
+    REQUIRE( t.type == torq::FALSE_LIT );
+
+    t = l.next();
+    REQUIRE( t.type == torq::INT_TYPE );
+
+    t = l.next();
+    REQUIRE( t.type == torq::FLOAT_TYPE );
+
+    t = l.next();
+    REQUIRE( t.type == torq::STRING_TYPE );
+
+    t = l.next();
+    REQUIRE( t.type == torq::FUNCTION );
+}
+
+TEST_CASE("identifiers", "[lexer]"){
+    torq::Lexer l("fred _range TESTVAL");
+
+    torq::Token t = l.next();
+    REQUIRE( t.type == torq::IDENTIFIER );
+    REQUIRE( t.s_value == "fred");
+
+    t = l.next();
+    REQUIRE( t.type == torq::IDENTIFIER );
+    REQUIRE( t.s_value == "_range");
+
+    t = l.next();
+    REQUIRE( t.type == torq::IDENTIFIER );
+    REQUIRE( t.s_value == "TESTVAL");
+}
+
+TEST_CASE("lexer test file", "[lexer]"){
+
+    std::string msg;
+
+    std::ifstream test_file("../tests/data/data_002.tq");
+    torq::Lexer l(test_file);
+
+    while(true) {
+        torq::Token t = l.next();
+
+        if(t.type == torq::EOS)
+            break;
+
+        msg = std::format("error on line: {} at column: {}", t.line, t.column);
+
+        INFO(msg);
+        REQUIRE( t.type != torq::ERROR);
+    }
 }

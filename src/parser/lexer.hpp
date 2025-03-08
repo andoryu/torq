@@ -4,43 +4,54 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include <unordered_map>
 
 namespace torq {
 
     enum TokenType {
-        LPAREN,
-        RPAREN,
-        LBRACKET,
-        RBRACKET,
-        DOT,
-        COMMA,
-        SEMICOLON,
-        EXCLAIM,
+        LPAREN, RPAREN, LBRACKET, RBRACKET,
+        DOT, COMMA, SEMICOLON, COLON, EXCLAIM,
 
         ASSIGN,
 
-        GT,
-        GTE,
-        LT,
-        LTE,
-        EQUALS,
-        NOTEQUALS,
+        GT, GTE, LT, LTE, EQUALS, NOTEQUALS,
 
-        PLUS,
-        MINUS,
-        STAR,
-        SLASH,
-        PERCENT,
+        PLUS, MINUS, STAR, SLASH, PERCENT,
 
-        INTEGER,
-        FLOAT,
-        STRING,
-        BOOL,
+        INTEGER_LIT, FLOAT_LIT, STRING_LIT,
+
+        IDENTIFIER,
+
+        IMPORT,
+        IF, THEN, ELSE, END, WHILE, FOR, DO, BREAK, RETURN,
+        TRUE_LIT, FALSE_LIT,
+        INT_TYPE, FLOAT_TYPE, STRING_TYPE,
+        FUNCTION,
 
         ENDL,
         EOS = 1000,
         ERROR = 9999
     };
+
+
+    inline std::unordered_map<std::string, TokenType> keywords = {
+        {"import", IMPORT},
+        {"if", IF},
+        {"then", THEN},
+        {"else", ELSE},
+        {"end", END},
+        {"while", WHILE},
+        {"for", FOR},
+        {"do", DO},
+        {"break", BREAK},
+        {"return", RETURN},
+        {"true", TRUE_LIT},
+        {"false", FALSE_LIT},
+        {"int", INT_TYPE},
+        {"float", FLOAT_TYPE},
+        {"string", STRING_TYPE},
+        {"fn", FUNCTION}
+    } ;
 
 
     class Token {
@@ -100,10 +111,13 @@ namespace torq {
         Token read_binary_number();
         Token read_number();
         Token read_string();
+        Token read_name();
 
         bool is_hex_char(char ch);
         bool is_binary_char(char ch);
         bool is_decimal_char(char ch);
+        bool is_name_start_char(char ch);
+        bool is_name_char(char ch);
 
       public:
         Lexer(std::string string_source) : string_stream(string_source) {

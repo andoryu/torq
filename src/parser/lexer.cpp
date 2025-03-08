@@ -115,7 +115,7 @@ namespace torq {
                 //try to convert to long
                 try {
                     long value = std::stol(buffer, nullptr, 16);
-                    return Token(INTEGER, line, start_column, value);
+                    return Token(INTEGER_LIT, line, start_column, value);
                 } catch (const std::exception& e){
                     return Token(ERROR, line, start_column, "Unable to convert hex literal to integer");
                 }
@@ -146,7 +146,7 @@ namespace torq {
                 //try to convert to long
                 try {
                     long value = std::stol(buffer, nullptr, 2);
-                    return Token(INTEGER, line, start_column, value);
+                    return Token(INTEGER_LIT, line, start_column, value);
                 } catch (const std::exception& e){
                     return Token(ERROR, line, start_column, "Unable to convert binary literal to integer");
                 }
@@ -201,7 +201,7 @@ namespace torq {
                         advance();
                         advance();
                     } else {
-                        return Token(ERROR, line, start_column, "incomplete float literal");
+                        return Token(ERROR, line, start_column, "Incomplete float literal");
                     }
 
                 } else if(is_decimal_char(sch)) {
@@ -212,7 +212,7 @@ namespace torq {
                     advance();
 
                 } else {
-                    return Token(ERROR, line, start_column, "incomplete float literal");
+                    return Token(ERROR, line, start_column, "Incomplete float literal");
                 }
             } else {
                 break;
@@ -222,14 +222,14 @@ namespace torq {
         if(decimal) {
             try {
                 long value = std::stol(buffer, nullptr, 10);
-                return Token(INTEGER, line, start_column, value);
+                return Token(INTEGER_LIT, line, start_column, value);
             } catch (const std::exception& e) {
                 return Token(ERROR, line, start_column, "Error converting decimal number literal");
             }
         } else {
             try{
             double value = std::stod(buffer);
-            return Token(FLOAT, line, start_column, value);
+            return Token(FLOAT_LIT, line, start_column, value);
             } catch(const std::exception& e) {
                 return Token(ERROR, line, start_column, "Error converting float number literal");
             }
@@ -246,7 +246,7 @@ namespace torq {
         if( (peek_char(1) == '"') && (peek_char(2) != '"') ) {
             //empty string
             advance();
-            return Token(STRING, line, start_column, "");
+            return Token(STRING_LIT, line, start_column, "");
         } else if ( (peek_char(1) == '"') && (peek_char(2) == '"') ) {
             //multi-line string
             single_line = false;
@@ -285,13 +285,13 @@ namespace torq {
                 }
             } else if(ch == '"') {
                 if(single_line) {
-                    return Token(STRING, line, start_column, buffer);
+                    return Token(STRING_LIT, line, start_column, buffer);
                 } else {
                     //multiline string - read and remove two more " or error
                     if( (peek_char(1) == '"') && (peek_char(2) == '"') ) {
-                        return Token(STRING, start_line, start_column, buffer);
+                        return Token(STRING_LIT, start_line, start_column, buffer);
                     } else {
-                        return Token(ERROR, start_line, start_column, "unclosed multi-line string");
+                        return Token(ERROR, start_line, start_column, "Unclosed multi-line string");
                     }
                 }
             } else if(source->eof()) {
@@ -301,6 +301,54 @@ namespace torq {
             }
         }
     }
+
+    bool Lexer::is_name_start_char(char ch){
+        if(ch == '_')
+            return true;
+        if( (ch >= 'a') && (ch <= 'z') )
+            return true;
+        if( (ch >= 'A') && (ch <= 'Z') )
+            return true;
+
+        return false;
+    }
+
+    bool Lexer::is_name_char(char ch){
+        if(ch == '_')
+            return true;
+        if( (ch >= 'a') && (ch <= 'z') )
+            return true;
+        if( (ch >= 'A') && (ch <= 'Z') )
+            return true;
+        if( (ch >= '0') && (ch <= '9') )
+            return true;
+
+        return false;
+    }
+
+    Token Lexer::read_name() {
+        std::string name = "";
+
+        int start_column = column + 1;
+
+        while(true) {
+            char ch = peek_char();
+
+            if(!is_name_char(ch))
+                break;
+
+            name += ch;
+            advance();
+        }
+
+        try {
+            TokenType type = keywords.at(name);
+            return Token(type, line, column);
+        } catch(std::out_of_range){
+            return Token(IDENTIFIER, line, column, name);
+        }
+    }
+
 
     Token Lexer::process_pair(char second, TokenType pair, TokenType single) {
         if (peek_char() == second) {
@@ -327,9 +375,10 @@ namespace torq {
             case ')': return Token(RPAREN, line, column);
             case '[': return Token(LBRACKET, line, column);
             case ']': return Token(RBRACKET, line, column);
-            case ',':  return Token(COMMA, line, column);
+            case ',': return Token(COMMA, line, column);
             case '.': return Token(DOT, line, column);
             case ';': return Token(SEMICOLON, line, column);
+            case ':': return Token(COLON, line, column);
             case '+': return Token(PLUS, line, column);
             case '-': return Token(MINUS, line, column);
             case '*': return Token(STAR, line, column);
@@ -365,12 +414,18 @@ namespace torq {
             case '"': return read_string();
 
             default:
-                if( (ch >= '0') && (ch <= '9') ) {
+                //handle all the cases that cannot be matched on start char
+                if(is_name_start_char(ch)) {
+                    //rewind 1 place to allow the read routine to pick up the first digit
+                    source->seekg(-1, source->cur);
+                    return read_name();
+                }
+                else if( (ch >= '0') && (ch <= '9') ) {
                     //rewind 1 place to allow the read routine to pick up the first digit
                     source->seekg(-1, source->cur);
                     return read_number();
                 } else {
-                    std::string error = "unrecognised token: ";
+                    std::string error = "Unrecognised token: ";
                     error += ch;
                     return Token(ERROR, line, column, error);
                 }

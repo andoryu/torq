@@ -1,0 +1,11 @@
+import std
+
+PI = 3.14159
+
+fn area(float radius): float
+    return 2.0 * radius * PI
+end
+
+radius = 12.67
+
+print("Area of circle = %5.3f\n", area(radius))
